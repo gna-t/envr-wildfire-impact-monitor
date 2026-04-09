@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wildfire Impact Monitor</title>
+    <meta
+      name="description"
+      content="Field-style screening tool linking wildfire detections and local air quality for U.S. cities."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="report-shell">
+      <header class="briefing-strip">
+        <div class="briefing-head">
+          <p class="report-kicker">Wildfire Screening Brief</p>
+          <h1>Wildfire Impact Monitor</h1>
+          <p class="purpose-line">
+            Screening-level incident view connecting hotspot detections and local air quality signals.
+          </p>
+        </div>
+
+        <div class="briefing-meta">
+          <div class="meta-block">
+            <span class="meta-label">Location Header</span>
+            <strong id="selectedCityTitle">Selected City: --</strong>
+            <span id="selectedCityMeta">Coordinates pending</span>
+          </div>
+          <div class="meta-block">
+            <span class="meta-label">Report Time</span>
+            <strong id="briefingTime">--</strong>
+            <span>Local timestamp</span>
+          </div>
+        </div>
+
+        <div class="search-panel" aria-label="City search">
+          <label for="cityInput">Search U.S. City</label>
+          <div class="search-row">
+            <div class="search-input-wrap">
+              <input
+                id="cityInput"
+                type="text"
+                placeholder="Ex: Houston, Texas or Cypress"
+                autocomplete="off"
+              />
+              <ul id="citySuggestions" class="suggestions" role="listbox" aria-label="City suggestions"></ul>
+            </div>
+            <button id="searchBtn" type="button">Run</button>
+          </div>
+          <div class="status-row">
+            <span id="statusCity" class="status-pill">City: idle</span>
+            <span id="statusAir" class="status-pill">Air: idle</span>
+            <span id="statusFire" class="status-pill">Fire: idle</span>
+          </div>
+          <p id="errorMessage" class="error-message" role="alert"></p>
+        </div>
+      </header>
+
+      <section class="incident-grid">
+        <article class="map-incident-panel">
+          <div class="panel-headline">
+            <h2>Spatial Incident View</h2>
+            <p>City reference point, nearby detections, and regional context.</p>
+          </div>
+
+          <div class="map-frame">
+            <div id="map" aria-label="Map of city and wildfire detections"></div>
+            <aside class="map-legend">
+              <h3>Map Legend</h3>
+              <p><span class="legend-dot city"></span> City reference</p>
+              <p><span class="legend-dot fire"></span> Wildfire detection</p>
+              <p class="legend-note">Detection source: NASA FIRMS (NRT)</p>
+            </aside>
+          </div>
+
+          <div class="smoke-interpretation" aria-live="polite">
+            <h3>Screening Summary: Possible Smoke Impact</h3>
+            <p id="impactText">Run a city search to generate an interpretation.</p>
+          </div>
+        </article>
+
+        <aside class="monitor-column">
+          <section class="monitor-panel">
+            <h2>Local Air Signal</h2>
+
+            <div id="aqiCard" class="aqi-gauge">
+              <span class="gauge-label">U.S. AQI</span>
+              <span id="aqiValue" class="gauge-value">--</span>
+              <span id="aqiCategory" class="gauge-category">Category pending</span>
+            </div>
+
+            <div class="pollutant-table">
+              <div class="pollutant-row">
+                <span>PM2.5</span>
+                <strong id="pm25Value">--</strong>
+                <em>ug/m3</em>
+              </div>
+              <div class="pollutant-row">
+                <span>PM10</span>
+                <strong id="pm10Value">--</strong>
+                <em>ug/m3</em>
+              </div>
+              <div class="pollutant-row">
+                <span>Ozone</span>
+                <strong id="ozoneValue">--</strong>
+                <em>ug/m3</em>
+              </div>
+              <div class="pollutant-row">
+                <span>Nitrogen Dioxide</span>
+                <strong id="no2Value">--</strong>
+                <em>ug/m3</em>
+              </div>
+              <div class="pollutant-row update-row">
+                <span>Last Updated</span>
+                <strong id="lastUpdatedValue">--</strong>
+                <em>local</em>
+              </div>
+            </div>
+          </section>
+
+          <section class="chart-panel">
+            <h2>24h PM2.5 Trend</h2>
+            <canvas id="pmChart" aria-label="24 hour PM2.5 chart"></canvas>
+            <p class="chart-caption">
+              Figure 1. Next 24 hours of modelled local PM2.5 concentration from Open-Meteo Air Quality API.
+            </p>
+          </section>
+        </aside>
+      </section>
+
+      <section class="fire-band">
+        <div class="band-cell">
+          <span class="band-label">Regional Fire Activity</span>
+          <strong id="fireCountValue">--</strong>
+        </div>
+        <div class="band-cell">
+          <span class="band-label">Closest Hotspot</span>
+          <strong id="closestFireValue">--</strong>
+        </div>
+        <div class="band-cell">
+          <span class="band-label">Activity Level</span>
+          <strong id="fireLevelValue">--</strong>
+        </div>
+        <div class="band-cell">
+          <span class="band-label">Detection Window</span>
+          <strong id="fireDateRangeValue">--</strong>
+        </div>
+      </section>
+
+      <section class="appendix">
+        <article class="appendix-block">
+          <h2>Method Notes</h2>
+          <ol>
+            <li>
+              City search uses Open-Meteo Geocoding, constrained to U.S. locations. Coordinates become the incident
+              reference point.
+            </li>
+            <li>
+              Air quality uses Open-Meteo current and hourly variables: U.S. AQI, PM2.5, PM10, ozone, and nitrogen
+              dioxide.
+            </li>
+            <li>
+              NASA FIRMS Area API is queried for recent detections (last 1 day) inside a bounding box around the
+              selected city.
+            </li>
+            <li>
+              Distances to detections are calculated with haversine geometry and summarized as closest hotspot and
+              activity level.
+            </li>
+          </ol>
+        </article>
+
+        <article class="appendix-block">
+          <h2>Transport Limits</h2>
+          <ul>
+            <li>Hotspot detections do not independently confirm smoke exposure in the searched city.</li>
+            <li>Smoke transport depends on wind fields, boundary-layer dynamics, and topographic effects.</li>
+            <li>Air quality fields may be modeled/interpolated and differ from local regulatory monitor values.</li>
+            <li>This tool is educational screening support, not an official risk or health advisory product.</li>
+          </ul>
+        </article>
+
+        <article class="appendix-block insight-block">
+          <h2>Environmental Insight</h2>
+          <p>
+            Wildfire plumes often travel beyond fire perimeters, so urban air quality can shift even when active burns
+            are outside city boundaries. PM2.5 is especially important because these fine particles can penetrate deep
+            into the respiratory system and are linked to acute and chronic health impacts. This briefing format helps
+            compare regional fire activity with local pollution signals in a transparent screening workflow.
+          </p>
+        </article>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Data sources:
+        <a href="https://open-meteo.com/en/docs/geocoding-api" target="_blank">Open-Meteo Geocoding</a> |
+        <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank">Open-Meteo Air Quality</a> |
+        <a href="https://firms.modaps.eosdis.nasa.gov/api/" target="_blank">NASA FIRMS</a>
+      </p>
+    </footer>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
