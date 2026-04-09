@@ -1,8 +1,7 @@
 // -----------------------------
 // Wildfire Impact Monitor
 // -----------------------------
-// Paste your free NASA FIRMS MAP_KEY below.
-const FIRMS_MAP_KEY = "PASTE_YOUR_FIRMS_MAP_KEY_HERE";
+const FIRMS_KEY_STORAGE = "wildfire-monitor-firms-map-key";
 const FIRMS_SOURCE = "VIIRS_NOAA20_NRT";
 const FIRMS_DAY_RANGE = 1;
 const DEFAULT_CITY = "Houston, Texas";
@@ -14,6 +13,7 @@ const FIRMS_BASE_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv";
 const cityInput = document.getElementById("cityInput");
 const citySuggestions = document.getElementById("citySuggestions");
 const searchBtn = document.getElementById("searchBtn");
+const firmsApiKeyInput = document.getElementById("firmsApiKeyInput");
 const errorMessage = document.getElementById("errorMessage");
 
 const selectedCityTitle = document.getElementById("selectedCityTitle");
@@ -107,6 +107,7 @@ const US_STATE_ABBR = {
 // -----------------------------
 initMap();
 bindEvents();
+loadStoredFirmsKey();
 if (briefingTime) {
   briefingTime.textContent = new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
@@ -117,6 +118,9 @@ searchCityAndUpdate(DEFAULT_CITY);
 
 function bindEvents() {
   searchBtn.addEventListener("click", () => searchCityAndUpdate(cityInput.value.trim()));
+  if (firmsApiKeyInput) {
+    firmsApiKeyInput.addEventListener("input", () => saveFirmsKey(firmsApiKeyInput.value));
+  }
 
   cityInput.addEventListener("input", onCityInputChange);
   cityInput.addEventListener("focus", () => {
@@ -442,15 +446,16 @@ function applyAqiClass(className) {
 // -----------------------------
 async function fetchWildfires(city) {
   setStatus(statusFire, "loading", "Fire: loading");
+  const firmsMapKey = getFirmsKey();
 
-  if (!FIRMS_MAP_KEY || FIRMS_MAP_KEY.includes("PASTE_YOUR_FIRMS_MAP_KEY")) {
+  if (!firmsMapKey) {
     setStatus(statusFire, "error", "Fire: missing MAP_KEY");
-    throw new Error("NASA FIRMS MAP_KEY is missing. Add your key in script.js to enable wildfire detections.");
+    throw new Error("NASA FIRMS MAP_KEY is missing. Paste your key into the textbox to enable wildfire detections.");
   }
 
   const bounds = buildBoundingBox(city.latitude, city.longitude, 1.8);
   const area = `${bounds.west},${bounds.south},${bounds.east},${bounds.north}`;
-  const url = `${FIRMS_BASE_URL}/${FIRMS_MAP_KEY}/${FIRMS_SOURCE}/${encodeURIComponent(area)}/${FIRMS_DAY_RANGE}`;
+  const url = `${FIRMS_BASE_URL}/${firmsMapKey}/${FIRMS_SOURCE}/${encodeURIComponent(area)}/${FIRMS_DAY_RANGE}`;
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -697,7 +702,7 @@ function renderPm25Chart(hourly) {
 function updateImpactInterpretation(airData, fires, wildfireError = "") {
   if (wildfireError) {
     impactText.textContent =
-      "Wildfire detections are currently unavailable, so this screening can only reflect local air quality signals. Add a valid NASA FIRMS MAP_KEY in script.js to enable wildfire-linked interpretation.";
+      "Wildfire detections are currently unavailable, so this screening can only reflect local air quality signals. Paste a valid NASA FIRMS MAP_KEY into the textbox to enable wildfire-linked interpretation.";
     return;
   }
 
@@ -729,6 +734,33 @@ function updateImpactInterpretation(airData, fires, wildfireError = "") {
   }
 
   impactText.textContent = `${message} This is an educational screening result and does not provide direct source attribution.`;
+}
+
+function loadStoredFirmsKey() {
+  if (!firmsApiKeyInput) return;
+  firmsApiKeyInput.value = getFirmsKey();
+}
+
+function getFirmsKey() {
+  try {
+    return localStorage.getItem(FIRMS_KEY_STORAGE)?.trim() || "";
+  } catch (error) {
+    return firmsApiKeyInput ? firmsApiKeyInput.value.trim() : "";
+  }
+}
+
+function saveFirmsKey(value) {
+  const trimmedValue = value.trim();
+
+  try {
+    if (trimmedValue) {
+      localStorage.setItem(FIRMS_KEY_STORAGE, trimmedValue);
+    } else {
+      localStorage.removeItem(FIRMS_KEY_STORAGE);
+    }
+  } catch (error) {
+    // Ignore storage failures and continue using the current field value.
+  }
 }
 
 // -----------------------------

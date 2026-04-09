@@ -128,11 +128,16 @@ h3 {
   gap: 6px;
 }
 
+.api-key-panel {
+  margin-top: 10px;
+}
+
 .search-input-wrap {
   position: relative;
 }
 
-#cityInput {
+#cityInput,
+#firmsApiKeyInput {
   width: 100%;
   border: 1px solid var(--line-strong);
   border-radius: 0;
@@ -142,9 +147,17 @@ h3 {
   color: #1f2a2e;
 }
 
-#cityInput:focus {
+#cityInput:focus,
+#firmsApiKeyInput:focus {
   outline: none;
   border-color: #4f6266;
+}
+
+.field-note {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: #5f6a6e;
+  line-height: 1.35;
 }
 
 #searchBtn {
