@@ -37,7 +37,7 @@ Runs fully in browser.
 
 - Open Meteo Geocoding API  
 - Open Meteo Air Quality API  
-- NASA FIRMS wildfire detection API :contentReference[oaicite:0]{index=0}  
+- NASA FIRMS wildfire detection API  
 
 ---
 
@@ -51,7 +51,7 @@ Runs fully in browser.
 6. Results are displayed on a map and dashboard  
 7. A screening level interpretation is generated  
 
-Wildfire detections are pulled from near real time satellite data :contentReference[oaicite:1]{index=1}  
+Wildfire detections are pulled from near real time satellite data  
 
 ---
 
@@ -95,9 +95,9 @@ Wildfire detections are pulled from near real time satellite data :contentRefere
 
 ## Project Structure
 
-- index.html → dashboard layout and UI :contentReference[oaicite:2]{index=2}  
-- script.js → data fetching, wildfire analysis, interpretation logic :contentReference[oaicite:3]{index=3}  
-- style.css → full layout and design system :contentReference[oaicite:4]{index=4}  
+- index.html → dashboard layout and UI  
+- script.js → data fetching, wildfire analysis, interpretation logic  
+- style.css → full layout and design system  
 
 ---
 
